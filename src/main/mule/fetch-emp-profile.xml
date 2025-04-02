@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="fetch-emp-profileFlow" doc:id="ca788342-5e43-43fd-91ef-88744cb3f35a" >
+		<http:listener doc:name="Listener" doc:id="bee12223-71e5-4f40-b71b-64580c1bc9f2" config-ref="HTTP_Listener_config" path="fetch"/>
+		<logger level="INFO" doc:name="Start log" doc:id="6f9805b6-d47a-4190-a1d6-3e65588d93ca" message="started flow" />
+		<salesforce:query doc:name="Query" doc:id="da7b8a81-c1c5-40df-b1cc-3e533831d217" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT Name, emp_phone__c, emp_email__c, emp_skills__c FROM emp_profile__c where emp_skills__c = ':skills']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[{
+	"skills" : attributes.queryParams.skills
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform doc:name="Transform Message" doc:id="5fe31a33-b51f-4b3d-bb51-06c1189c989e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map {
+	empName: $.Name,
+	empPhone: $.emp_phone__c,
+	empEmail: $.emp_email__c,
+	empSkills: $.emp_skills__c
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="End log" doc:id="101a00bc-3b9f-41cc-8f61-6bebee815a49" message="completed flow" />
+	</flow>
+</mule>

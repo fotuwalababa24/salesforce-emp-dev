@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="31e2adbe-a8e4-45b4-8315-8fb432f40244" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="2848b92a-eb02-4a3d-88a8-1f761f956246" >
+		<salesforce:basic-connection username="fotuwalababa995@agentforce.com" password="Accenture@123" securityToken="K798IG8DS0yH7NJKyvzaWgVj0" />
+	</salesforce:sfdc-config>
+	<flow name="create-emp-profile" doc:id="f9df6923-500b-4d8d-953b-62288594b864" >
+		<http:listener doc:name="Listener" doc:id="0dbf4f10-b0de-4487-8d74-c8ac9bb0ba2b" config-ref="HTTP_Listener_config" path="Create"/>
+		<logger level="INFO" doc:name="Start log" doc:id="6fac3baf-da7b-4022-8b75-8112aebe19a0" message="started flow"/>
+		<ee:transform doc:name="Transform Message" doc:id="cbf79ab7-5a56-4716-a2c4-1e47397328db" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[{
+	Name: payload.empName,
+	emp_phone__c: payload.empPhone,
+	emp_email__c: payload.empEmail,
+	emp_skills__c: payload.empSkills
+}]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:create type="emp_profile__c" doc:id="3e6946e0-985a-4fa1-9cc0-0755fb656675" config-ref="Salesforce_Config"/>
+		<ee:transform doc:name="Transform Message" doc:id="97503638-cfe3-4eea-b840-f3742b0227d0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	code: "200",
+	message: "Success"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="End log" doc:id="3b097343-be93-4726-a333-1ff7d5f26250" message="completed flow"/>
+	</flow>
+	<flow name="update-emp-profile" doc:id="a6558e79-a423-4a5d-86de-353a3e0349d3" >
+		<http:listener doc:name="Listener" doc:id="59c2824e-d211-4340-92c0-6caeec4026eb" config-ref="HTTP_Listener_config" path="upsate" />
+		<logger level="INFO" doc:name="Start log" doc:id="6af895da-227a-4e04-b8b6-0fccb8e9b3fa" message="started flow" />
+		<ee:transform doc:name="Transform Message" doc:id="e9c98386-d2b0-4642-a098-7a92acd45528" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+[{
+	Name: payload.empName,
+	emp_phone__c: payload.empPhone,
+	emp_email__c: payload.empEmail,
+	emp_skills__c: payload.empSkills
+}]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:upsert objectType="emp_profile__c" doc:name="Upsert" doc:id="2125c2d0-779c-4555-a190-028b071e8de2" config-ref="Salesforce_Config" externalIdFieldName="Name"/>
+		<logger level="INFO" doc:name="End log" doc:id="3e48d84b-4845-460e-ad9a-c2ee983f9efa" message="completed flow" />
+	</flow>
+</mule>
